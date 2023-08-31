@@ -1,7 +1,7 @@
 # WechatVideoSniffer
 微信视频号PC版视频地址嗅探器
 
-本项目采用[aardio](https://www.aardio.com/)编程语言开发, Forked from [xuncv/WechatVideoSniffer](https://github.com/xuncv/WechatVideoSniffer)
+Forked from [xuncv/WechatVideoSniffer](https://github.com/xuncv/WechatVideoSniffer)
 
 ## 原理
 
@@ -17,7 +17,7 @@
 
 3. 此时软件列表会更新视频链接，点击`下载选中` 按钮就可以下载视频，视频存放在用户桌面
 
-3. 双击视频链接可预览
+3. 双击列表中的视频链接可在线预览
 
    
 
