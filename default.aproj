@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<project ver="10" name="WechatVideoSniffer" libEmbed="true" icon="..." ui="win" output="WechatVideoSniffer.exe" CompanyName="单位名称" FileDescription="WechatVideoSniffer" LegalCopyright="Copyright (C) 作者 2022" ProductName="WechatVideoSniffer" InternalName="WechatVideoSniffer" FileVersion="0.0.0.07" ProductVersion="0.0.0.07" publishDir="/dist/" dstrip="false">
+<project ver="10" name="WechatVideoSniffer" libEmbed="true" icon="res\wechat.ico" ui="win" output="WechatVideoSniffer.exe" CompanyName="单位名称" FileDescription="WechatVideoSniffer" LegalCopyright="Copyright (C) 作者 2022" ProductName="WechatVideoSniffer" InternalName="WechatVideoSniffer" FileVersion="0.0.0.07" ProductVersion="0.0.0.07" publishDir="/dist/" dstrip="false" local="false" ignored="false">
 	<file name="main.aardio" path="main.aardio" comment="main.aardio"/>
 	<folder name="资源文件" path="res" embed="true" local="false" ignored="false">
 		<file name="BasicFormatsForCore.dll" path="res\BasicFormatsForCore.dll" comment="res\BasicFormatsForCore.dll"/>
@@ -7,6 +7,9 @@
 		<file name="CertMaker.dll" path="res\CertMaker.dll" comment="res\CertMaker.dll"/>
 		<file name="FiddlerCore4.dll" path="res\FiddlerCore4.dll" comment="res\FiddlerCore4.dll"/>
 		<file name="FiddlerCore4.xml" path="res\FiddlerCore4.xml" comment="res\FiddlerCore4.xml"/>
+		<file name="wechat.ico" path="res\wechat.ico" comment="res\wechat.ico"/>
 	</folder>
-	<folder name="窗体文件" path="dlg" comment="目录" embed="true"/>
+	<folder name="窗体文件" path="dlg" comment="目录" embed="true" local="false" ignored="false">
+		<file name="player.aardio" path="dlg\player.aardio" comment="dlg\player.aardio"/>
+	</folder>
 </project>

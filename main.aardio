@@ -1,46 +1,53 @@
 import win.ui;
 /*DSG{{*/
-mainForm = win.form(text="WechatVideoSniffer";right=959;bottom=591)
+mainForm = win.form(text="WechatVideoSniffer";right=904;bottom=527;border="dialog frame";max=false)
 mainForm.add(
-btnClear={cls="button";text="清空列表";left=797;top=540;right=889;bottom=580;z=5};
-btnCopyUrl={cls="button";text="复制链接";left=797;top=177;right=889;bottom=211;z=6};
-btnDown={cls="button";text="下载选中";left=794;top=120;right=885;bottom=157;z=4};
-btnSniffer={cls="button";text="监听";left=794;top=14;right=885;bottom=51;z=1};
-btnStop={cls="button";text="停止";left=794;top=70;right=885;bottom=107;z=2};
-listview={cls="listview";left=17;top=15;right=787;bottom=584;edge=1;hscroll=1;z=3}
+btnClear={cls="button";text="清空列表";left=797;top=475;right=889;bottom=511;z=5};
+btnClearCert={cls="button";text="移除证书";left=797;top=429;right=889;bottom=465;disabled=1;z=7};
+btnCopyUrl={cls="button";text="复制链接";left=797;top=107;right=889;bottom=143;z=6};
+btnDown={cls="button";text="下载选中";left=797;top=153;right=889;bottom=189;z=4};
+btnSniffer={cls="button";text="监听";left=797;top=15;right=889;bottom=51;z=1};
+btnStop={cls="button";text="停止";left=797;top=61;right=889;bottom=97;disabled=1;z=2};
+listview={cls="listview";left=17;top=15;right=787;bottom=511;edge=1;fullRow=1;hscroll=1;msel=false;z=3};
+quality={cls="checkbox";text="高画质";left=799;top=197;right=882;bottom=211;checked=1;z=8}
 )
 /*}}*/
 
 import dotNet
 import win.clip
-mainForm.listview.insertColumn( "URL",-1 )
+import win.reg
+import inet.url
+import zzskin
+
+mainForm.listview.insertColumn( "URL -- double click on the link to preview the video", -1 )
 dotNet.reference({
-	"FiddlerCore4" = $"res\FiddlerCore4.dll";
-	"CertMaker" = $"res\CertMaker.dll";
-	"BCMakeCert" = $"res\BCMakeCert.dll";
-	"BasicFormatsForCore" = $"res\BasicFormatsForCore.dll"
+	"FiddlerCore4" = $"\res\FiddlerCore4.dll";
+	"CertMaker" = $"\res\CertMaker.dll";
+	"BCMakeCert" = $"\res\BCMakeCert.dll";
+	"BasicFormatsForCore" = $"\res\BasicFormatsForCore.dll"
 })
 
-var FiddlerCore4 = dotNet.load("FiddlerCore4")
-Fiddler = FiddlerCore4.import("Fiddler")
+// var FiddlerCore4 = dotNet.load("FiddlerCore4")
+Fiddler = dotNet.load("FiddlerCore4").import("Fiddler")
+
+var desktop = "";
+if (Fiddler.CertMaker.rootCertExists()) mainForm.btnClearCert.disabled = false;
 
 InstallCertificate = function(){
-	if(!Fiddler.CertMaker.rootCertExists()){
-		if(!Fiddler.CertMaker.createRootCert()){
-			return false;
-		}
-		if(Fiddler.CertMaker.trustRootCert()){
-			return false;
+	if (!Fiddler.CertMaker.rootCertExists()) {
+		if (!Fiddler.CertMaker.createRootCert()) return false;
+		if (!Fiddler.CertMaker.trustRootCert()) return false;
+	} else {
+		if (!Fiddler.CertMaker.rootCertIsTrusted()) {
+			if (!Fiddler.CertMaker.trustRootCert()) return false;
 		}
 	}
 	return true;
 }
 
-UninstallCertificate = function(){
-	if(Fiddler.CertMaker.rootCertExists()){
-		if(!Fiddler.CertMaker.removeFiddlerGeneratedCerts(true)){
-			return false;
-		}
+UninstallCertificate = function(flag = true){
+	if (Fiddler.CertMaker.rootCertExists()) {
+		if (!Fiddler.CertMaker.removeFiddlerGeneratedCerts(flag)) return false;
 	}
 	return true;
 }
@@ -48,10 +55,11 @@ UninstallCertificate = function(){
 // 视频链接过滤规则
 var urls = {}
 filterUrl = function(url){
-	if(string.find(url,"^https\:\/\/finder<mp>*\.video\.qq\.com\/251\/20302\/") or string.find(url,"mpvideo\.qpic\.cn") ){
+	if (  string.find(url,"^https\:\/\/finder<mp>*\.video\.qq\.com\/251\/20302\/")
+	   or string.find(url,"mpvideo\.qpic\.cn") ) {
 	 	// 去除无用链接格式
-	 	if(!!string.match(url,"token=\w+")){
-	 		if(!urls[url]){
+	 	if (!!string.match(url,"token=\w+")) {
+	 		if (!urls[url]) {
 	 			urls[url] = true
 	 			return true; 
 	 		}	
@@ -60,44 +68,50 @@ filterUrl = function(url){
 	return false; 
 }
 
-
 AttachListening = function(){
-	 Fiddler.FiddlerApplication.BeforeRequest = function(s){
-	 	s.bBufferResponse = false;
-	 	if(filterUrl(s.fullUrl)){
-	 		mainForm.listview.addItem( {s.fullUrl} )
-	 	}
-	 }
+	Fiddler.FiddlerApplication.BeforeRequest = function(s){
+		s.bBufferResponse = false;
+		if (filterUrl(s.fullUrl)) {
+			s.fullUrl = string.replace(s.fullUrl, "qq\.com\/251\/20302", "qq\.com\/251\/20304")
+			mainForm.listview.addItem( {s.fullUrl} )
+		}
+	}
 /*
-	 Fiddler.FiddlerApplication.BeforeResponse = function(s){
-		if(string.startWith(s.fullUrl,"https://finder.video.qq.com")){
-	 		mainForm.listview.addItem( {s.fullUrl} )
-	 	}
-	 }
+	Fiddler.FiddlerApplication.BeforeResponse = function(s){
+		if (string.startWith(s.fullUrl,"https://finder.video.qq.com")) {
+			mainForm.listview.addItem( {s.fullUrl} )
+		}
+	}
 */
 }
 
-StartupFiddlerCore = function(){
+StartFiddlerCore = function(){
 	Fiddler.FiddlerApplication.Startup(9898,Fiddler.FiddlerCoreStartupFlags.Default | Fiddler.FiddlerCoreStartupFlags.RegisterAsSystemProxy | Fiddler.FiddlerCoreStartupFlags.AllowRemoteClients)
 }
 
-UninstallFiddler = function(){
-	if(Fiddler.FiddlerApplication.IsStarted()){
-		Fiddler.FiddlerApplication.Shutdown();
-	}
+StopFiddlerCore = function(){
+	if (Fiddler.FiddlerApplication.IsStarted()) Fiddler.FiddlerApplication.Shutdown();
 }
 
 mainForm.btnSniffer.oncommand = function(id,event){
-	InstallCertificate()
-	AttachListening()
-	StartupFiddlerCore()
 	mainForm.btnSniffer.disabled = true
+	mainForm.btnClearCert.disabled = true
+	if (InstallCertificate()) {
+		AttachListening()
+		StartFiddlerCore()
+		mainForm.btnStop.disabled = false
+	} else {
+		mainForm.msgbox("请先安装证书！")
+		mainForm.btnSniffer.disabled = false
+	}
 }
 
 mainForm.btnStop.oncommand = function(id,event){
-	UninstallCertificate()
-	UninstallFiddler()
+	UninstallCertificate(false)
+	StopFiddlerCore()
 	mainForm.btnSniffer.disabled = false
+	mainForm.btnStop.disabled = true
+	mainForm.btnClearCert.disabled = false
 }
 
 mainForm.btnClear.oncommand = function(id,event){
@@ -106,37 +120,50 @@ mainForm.btnClear.oncommand = function(id,event){
 }
 
 mainForm.btnDown.oncommand = function(id,event){
-	var index = mainForm.listview.selIndex
-	if(index>0){
-		var url = mainForm.listview.getItemText(index,1,10240)
+	var index = mainForm.listview.getSelection()
+	if (index > 0) {
+		var url = mainForm.listview.getItemText(index, 1, 10240)
+		if (!inet.url.is(url, _URLIS)) return false;
+		if (mainForm.quality.checked) {
+			var urlcrack = inet.url.split(url);
+			var params = inet.url.splitParameters(urlcrack.extraInfo);
+			url = urlcrack.scheme + "://" + urlcrack.host ++ urlcrack.path + "?"
+			 	+ "encfilekey=" + params.encfilekey + "&token=" + params.token;
+		}
+		var zd = zzskin.downBox(mainForm, mainForm.text, 1000);
+		if (!#desktop) desktop = win.reg("HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders").queryValue("desktop");
+		var filename = string.random(6) + ".mp4";
 		mainForm.btnDown.text = "下载中"
 		mainForm.btnDown.disabled = true
-		thread.invokeAndWait(
-			function(url){
-				import inet.httpFile
-				math.randomize()
-				var remoteFile = inet.httpFile( url,"/download/" + string.random(6) + ".mp4" )
-				remoteFile.test()
-				remoteFile.download()
-				remoteFile.close()
-			},url
-		)
-		mainForm.msgbox("下载完成")
+		zd.download(url, desktop + "/" + filename);
+		if (zd.complete) mainForm.msgbox(filename + " 已保存至桌面");
 		mainForm.btnDown.text = "下载选中"
 		mainForm.btnDown.disabled = false
 	}
 }
 
 mainForm.onClose = function(hwnd,message,wParam,lParam){
-   	//UninstallCertificate()
-	UninstallFiddler() 
+   	UninstallCertificate(false)
+	StopFiddlerCore() 
 }
 
 mainForm.btnCopyUrl.oncommand = function(id,event){
-	var index = mainForm.listview.selIndex
-	if(index>0){
-		var url = mainForm.listview.getItemText(index,1,10240)
+	var index = mainForm.listview.getSelection()
+	if (index > 0) {
+		var url = mainForm.listview.getItemText(index, 1, 10240)
 		win.clip.write(url)
+	}
+}
+
+mainForm.btnClearCert.oncommand = function(id,event){
+	if (mainForm.btnSniffer.disabled) mainForm.btnStop.oncommand();
+	if (UninstallCertificate()) mainForm.btnClearCert.disabled = true;
+}
+
+mainForm.listview.onDoubleClick = function(item,subItem,nmListView){
+	if (item > 0) {
+		var url = mainForm.listview.getItemText(item, 1, 10240);
+		if (inet.url.is(url, _URLIS)) mainForm.loadForm("\dlg\player.aardio", url).doModal();
 	}
 }
 

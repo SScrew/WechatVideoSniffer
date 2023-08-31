@@ -1,0 +1,19 @@
+import win.ui;
+/*DSG{{*/
+var winform = win.form(text="视频预览";right=800;bottom=600)
+winform.add(
+static={cls="static";left=0;top=0;right=800;bottom=600;bgcolor=0;db=1;dl=1;dr=1;dt=1;edge=1;z=1}
+)
+/*}}*/
+
+// 接收窗口传值
+var mbParam = {...};
+
+//创建控件
+//https://docs.microsoft.com/zh-cn/windows/win32/wmp/object-model-reference-for-scripting
+var wmplay = winform.static.createEmbed("WMPlayer.OCX");    
+wmplay._object.Url = mbParam[2];
+wmplay._object.stretchToFit = true;
+
+winform.show(true) 
+win.loopMessage();

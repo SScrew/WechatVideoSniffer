@@ -1,0 +1,406 @@
+﻿//zzskin.aardio
+import fonts.fontAwesome;
+import win.ui.shadow;
+import win.ui.resizeBorder;
+import win.ui.ctrl.plus;
+import win.ui.minmax;
+import win.ui.tooltip;
+
+namespace zzskin;
+
+class window {
+    ctor (winform, width = 40, box = 0) {
+        this.style = {
+            background = { hover = 0xff575e69; active = 0xff666c77; default = 0xff454c59; }
+            color = { default = 0xffffffff; }
+            _close = {
+                background = { hover = 0xffe8140d; active = 0xffcd120c; default = 0xff454c59; }
+                color = { default = 0xffffffff; } }
+            _icon = {
+                background = { default = 0xff454c59; }
+                color = { default = 0xffffffff; } }
+        };
+        this.targetForm = winform._parentForm || winform;
+        winform.disableDragFullWindow = true;
+        var ws = ..win.getStyle(this.targetForm.hwnd);
+        var font = LOGFONT(name='Marlett';h=-14);
+        var tooltipCtr = ..win.ui.tooltip(winform);
+        winform.add(
+            titlebar={cls="static";text="";left=0;top=0;bottom=30;dl=1;dr=1;dt=1;notify=1;center=1;clip=1;transparent=1;z=1;};
+            titlebarClose={cls="plus";text="r";top=0;height=30;width=width;marginRight=0;dr=1;dt=1;font=font;z=3};
+            titlebarIcon={cls="plus";iconText='\uF17A';iconStyle={font=LOGFONT(name='FontAwesome';h=-14);padding={left=3}};left=0;top=0;height=30;width=30;dl=1;dt=1;z=3};
+            titlebarText={cls="plus";text="";textPadding={left=30;};align="left";left=0;top=0;height=30;bgcolor=5852229;color=16777215;font=LOGFONT(h=-12);dl=1;dt=1;z=2};
+        )
+        winform.titlebarIcon.skin(this.style._icon);
+        winform.titlebarClose.skin(this.style._close);
+        winform.titlebarClose.oncommand = function(id,event) {
+            this.targetForm.close();
+        }
+        tooltipCtr.addTool(winform.titlebarClose, "关闭", 0x10/*_TTF_SUBCLASS*/);
+        if ( ws & 0x10000/*_WS_MAXIMIZEBOX*/ ) {
+            winform.add(
+                titlebarMax={cls="plus";text="1";top=0;height=30;width=width;marginRight=width;dr=1;dt=1;font=font;z=3};
+            )
+            winform.titlebarMax.skin(this.style);
+            winform.titlebarMax.oncommand = function(id,event) {
+                this.targetForm.hitMax();
+            }
+            tooltipCtr.addTool(winform.titlebarMax, "最大化", 0x10/*_TTF_SUBCLASS*/);
+            winform.titlebar.wndproc = {
+                [ 0x201/*_WM_LBUTTONDOWN*/ ] = function(hwnd,message,wParam,lParam){
+                    this.targetForm.hitCaption();
+                }
+                [ 0x203/*_WM_LBUTTONDBLCLK*/] = function(hwnd,message,wParam,lParam){
+                    this.targetForm.hitMax();
+                }
+            }
+            this.targetForm.adjust = function( cx,cy,wParam ) {
+                 if ( wParam == 0x2/*_SIZE_MAXIMIZED*/ ) {
+                     winform.titlebarMax.checked = true;
+                 }
+                 elseif ( wParam == 0x0/*_SIZE_RESTORED*/ ) {
+                     winform.titlebarMax.checked = false;
+                 }
+                 winform.titlebarMax.text = winform.titlebarMax.checked ? "2" : "1";
+                 tooltipCtr.addTool(winform.titlebarMax, winform.titlebarMax.checked ? "还原" : "最大化", 0x10/*_TTF_SUBCLASS*/);
+            };
+        } else {
+            winform.titlebar.wndproc = {
+                [ 0x201/*_WM_LBUTTONDOWN*/ ] = function(hwnd,message,wParam,lParam) {
+                    this.targetForm.hitCaption();
+                }
+            }	
+        }
+        if ( ws & 0x20000/*_WS_MINIMIZEBOX*/ ) {
+            var marginRight = width;
+            if ( winform.titlebarMax ) marginRight = width * 2;
+            winform.add(
+                titlebarMin={cls="plus";text="0";top=0;height=30;width=width;marginRight=marginRight;dr=1;dt=1;font=font;z=3}; 
+            )
+            winform.titlebarMin.skin(this.style);
+            winform.titlebarMin.oncommand = function(id,event) {
+                this.targetForm.hitMin();
+            }
+            tooltipCtr.addTool(winform.titlebarMin, "最小化", 0x10/*_TTF_SUBCLASS*/);
+        }
+        if ( box ) {
+            winform.add(
+                contentBox={cls="custom";left=0;top=30;dt=1;dl=1;dr=1;db=1;z=1}
+            )
+        }
+        ..win.ui.shadow( this.targetForm, 70, 10 );
+        ..win.ui.minmax( this.targetForm );
+        ..win.setPos(winform.titlebar.hwnd,,,,,0x1/*_HWND_BOTTOM*/);
+        this._form = winform;
+        this.titlebar = winform.titlebar;
+        this.titlebarClose = winform.titlebarClose;
+        this.titlebarMax = winform.titlebarMax;
+        this.titlebarMin = winform.titlebarMin;
+        this.titlebarIcon = winform.titlebarIcon;
+        this.titlebarText = winform.titlebarText;
+        this.contentBox = winform.contentBox;
+    };
+}
+
+class message {
+    ctor (parent, textSize = 14, titlebarStyle) {
+        this.parent = parent : ..win.getActive(); 
+        this.icon = '\uF05A';
+        this.iconColor = 0xD4883B;
+        this.textColor = 0x000000;
+        this.textSize = textSize < 14 ? 12 : 14;
+        this.bgcolor = 0xFFFFFF;
+        this.offsetData = {0; 15};
+        if (type(titlebarStyle) != type.table) titlebarStyle = {};
+        this.titlebar = {
+            icon = titlebarStyle[1] : '\uF17A';
+            text = titlebarStyle[2] : "提示";
+            width = titlebarStyle[3] : 40
+        };
+        this.buttonStyle = { 
+            background = { hover = 0xff575e69; active = 0xff666c77; default = 0xff454c59; }
+            color = { default = 0xffffffff; }
+        }
+    };
+    create = function(msg, showButtons) {
+        if (!#msg) error("文本不能为空", 2);
+        var parentForm = this.parent;
+        if (parentForm) {
+            if ( !..win.isWindow(this.parent[["hwnd"]] || this.parent) ) {
+                parentForm = ..win.getActive() || ..mainForm[["hwnd"]];
+            }
+        }
+        var winform = ..win.form(text="";right=832;bottom=680;bgcolor=this.bgcolor;border="none";exmode="toolwindow";min=false;max=false;parent=parentForm)
+        if (!winform) return;
+        winform.add(
+            icon={cls="plus";text=this.icon;left=10;top=40;right=70;bottom=this.textSize==12?88:92;color=this.iconColor;dl=1;dt=1;font=LOGFONT(name='FontAwesome';h=-this.textSize*2.6);z=1};
+            message={cls="plus";text=msg;left=70;top=54;align="left";color=this.textColor;dl=1;dr=1;dt=1;db=1;font=LOGFONT(h=-this.textSize);valign="top";z=2}; 
+        );
+        if (showButtons) {
+            winform.add(
+                btnCancel={cls="plus";text="取消";left=742;top=660-(this.textSize==12?28:30);right=812;bottom=660;color=16777215;db=1;dr=1;font=LOGFONT(h=-this.textSize);notify=1;z=4};
+                btnOk={cls="plus";text="确定";left=662;top=660-(this.textSize==12?28:30);right=732;bottom=660;color=16777215;db=1;dr=1;font=LOGFONT(h=-this.textSize);notify=1;z=3};
+            );
+            winform.btnOk.oncommand = function(id,event) {
+                winform.endModal(true);
+            } 
+            winform.btnCancel.oncommand = function(id,event) {
+                winform.endModal();
+            } 
+            winform.btnCancel.skin( this.buttonStyle );
+            winform.btnOk.skin( this.buttonStyle );
+        }
+        winform.onOk = function() {
+            winform.endModal(true);
+        }
+        winform.onCancel = function() {
+            winform.endModal();
+        }
+        // 根据文字长度，自动调整窗口宽度
+        var rect = winform.message.measureString();
+        var width = winform.message.left + rect.width + 30;
+        if ( width < 192 ) width = 192;
+        var height = winform.message.top + rect.height + 24;
+        if ( showButtons ) height += winform.btnOk.height + 20;
+        winform.width = width;
+        winform.height = height;
+        winform.message.width = rect.width + 20;
+        winform.message.height = rect.height + 5;
+        if ( ..string.indexOf(msg, '\n') ) {
+            winform.message.valign = "top";
+            winform.icon.valign = "top";
+            winform.icon.top = winform.message.top;
+        }
+        winform.center(parentForm);
+        // 位置偏移
+        var dpiX, dpiY = parentForm.dpiScaleX : 1, parentForm.dpiScaleY : 1;
+        winform.left += this.offset[1] * dpiX;
+        winform.right += this.offset[1] * dpiX;
+        winform.top += this.offset[2] * dpiY;
+        winform.bottom += this.offset[2] * dpiY;
+        var zw = ..zzskin.window(winform, this.titlebar.width);
+        zw.titlebarText.text = this.titlebar.text;
+        zw.titlebarIcon.iconText = this.titlebar.icon;
+        winform.resize();
+        return winform;	
+    }
+    doModal = function(msg, showButtons, timeOut) {
+        if (!#msg) error("文本不能为空", 2);
+        var dlg = this.create(msg, showButtons);
+        if (!dlg) return;
+        if (timeOut) dlg.setTimeout( lambda() dlg.endModal(), timeOut);
+        return dlg.doModal();
+    }
+    alert = function(msg, icon = "info", timeOut, offset, ...) {
+        var style = {
+             info = { icon = '\uF05A'; iconColor = 0xD4883B; }
+             warn = { icon = '\uF071'; iconColor = 0x5654E0; }
+               ok = { icon = '\uF058'; iconColor = 0x54CC2E; }
+              err = { icon = '\uF057'; iconColor = 0x5654E0; }
+            smile = { icon = '\uF118'; iconColor = 0x54CC2E; }
+            frown = { icon = '\uF119'; iconColor = 0x5654E0; }
+               up = { icon = '\uF164'; iconColor = 0x54CC2E; }
+             down = { icon = '\uF165'; iconColor = 0x5654E0; }
+        };
+        this.icon = style[icon]["icon"];
+        this.iconColor = style[icon]["iconColor"];
+        this.offset = offset : this.offsetData;
+        if (...) msg = ..string.format(msg, ...);
+        return this.doModal(msg,, timeOut);
+    }
+    confirm = function(msg, offset) {
+        this.icon = '\uF059';
+        this.iconColor = 0xD4883B;
+        this.offset = offset : this.offsetData;
+        return this.doModal(msg, true);
+    }
+    prompt = function(info, text, mode = 0, offset) {
+        var parentForm = this.parent;
+        if (parentForm) {
+            if ( !..win.isWindow(this.parent[["hwnd"]] || this.parent) ) {
+                parentForm = ..win.getActive() || ..mainForm[["hwnd"]];
+            }
+        }
+        var winform = ..win.form(cls="";text="提示";right=300;bottom=160;bgcolor=16777215;border="none";min=false;max=false;parent=parentForm;)
+        winform.add(
+            info={cls="static";text=info:"请输入";left=20;top=42+(this.textSize==12?3:0);right=280;bottom=60;dl=1;dt=1;transparent=1;font=LOGFONT(h=-this.textSize);z=1};
+            input={cls="edit";text=text;left=20;top=72;right=280;bottom=97;dl=1;dt=1;edge=1;password=mode;font=LOGFONT(h=-14);z=2};
+            btnOk={cls="plus";text="确定";left=130;top=114;right=200;bottom=142;color=16777215;db=1;dr=1;font=LOGFONT(h=-this.textSize);notify=1;z=3};
+            btnCancel={cls="plus";text="取消";left=210;top=114;right=280;bottom=142;color=16777215;db=1;dr=1;font=LOGFONT(h=-this.textSize);notify=1;z=4};
+        )
+        winform.btnOk.skin( this.buttonStyle );
+        winform.btnCancel.skin( this.buttonStyle );
+        winform.onInitDialog = function(hwnd,message,wParam,lParam) {
+            winform.input.setFocus();
+        };
+        winform.btnCancel.oncommand = function(id,event) {
+            winform.endModal();
+        };
+        winform.btnOk.oncommand = function(id,event) {
+            winform.endModal( winform.input.text );
+        };
+        winform.onOk = function() {
+            winform.endModal( winform.input.text );
+        };
+        winform.onCancel = function() {
+            winform.endModal();
+        };
+        var zw = ..zzskin.window(winform);
+        zw.titlebarText.text = winform.text;
+        winform.center(parentForm);
+        offset = offset : this.offsetData;
+        var dpiX, dpiY = parentForm.dpiScaleX : 1, parentForm.dpiScaleY : 1;
+        winform.left += offset[1] * dpiX;
+        winform.right += offset[1] * dpiX;
+        winform.top += offset[2] * dpiY;
+        winform.bottom += offset[2] * dpiY;
+        return winform.doModal();
+    }
+}
+
+class downBox {
+    ctor (...) {
+        this = ..win._form(text="";right=350;bottom=100;bgcolor=16777215;border="none";max=false;min=false;mode="popup";parent=...)
+        this.add(
+            info={cls="plus";text="";left=20;top=45;right=330;bottom=65;align="left";z=3};
+            progress={cls="plus";left=20;top=70;right=330;bottom=80;bgcolor=13093325;forecolor=5852229;hide=1;z=1}
+        )
+        var zw = ..zzskin.window(this);
+        this.parent, this.text, this.closeTimeout = ...
+        if (#this.text) zw.titlebarText.text = this.text;
+        if (this.closeTimeout ? type(this.closeTimeout) != type.number) this.closeTimeout = 1000;
+    };
+    test = function(url, path, cfg, ...) {
+        if (type(url) != type.string) return null;
+        if (type(path) != type.string) return null;		
+        ..fsys.createParentDir(path);
+        var remoteFile = ..inet.httpFile(url, path, cfg, ...);
+        var ok = remoteFile.test();
+        this.statusCode = remoteFile.statusCode; 
+        this.contentLength = remoteFile.contentLength;
+        this.modified = remoteFile.modified;
+        return ok;
+    };
+    download = function(url, path, cfg, userAgent, proxy, proxyBypass, flags) { 
+        if (type(url) != type.string && type(url) != type.function) error("参数@1错误", 2);
+        if (type(path) != type.string) error("参数@2错误", 2);
+        this.complete = false;
+        this.onInitDialog = function(hwnd, message, wParam, lParam) {
+            this.show();
+            ..thread.invoke(this.downloadThread, this, url, path, cfg, userAgent:this.userAgent, proxy, proxyBypass, flags);
+        }
+        return this.doModal();
+    };
+    removeResumeFile = function() {
+        if (this.resumePath) {
+            ..io.remove(this.resumePath);
+            this.resumePath = null;
+        }
+    };
+    onError = function(err) {
+        this.info.text = err;
+    };
+    onComplete = function(info) {
+        this.info.text = info;
+    };
+    onStatusChange = function(text){
+        this.info.text = text;
+    };
+    onReceiveBegin = function(contentLength, progresRange){
+        if (contentLength) this.total = ..fsys.formatSize(contentLength);
+        else this.total = "unknown";
+        // 初始化进度条
+        this.progress.setProgressRange(0, progresRange);
+        this.progress.progressPos = 0;
+        this.progress.hide = false;
+    }
+    onReceive = function(totalDownSize, progressPos, sizePs){
+        this.info.text = "下载大小：" + ..fsys.formatSize(totalDownSize) + "/" + this.total
+                       + "　下载速度：" + ..math.size64(sizePs).format() + "/s";
+        this.progress.progressPos = progressPos;
+    };
+    downloadThread = function(this, url, path, cfg, userAgent, proxy, proxyBypass, flags) {
+        import inet.httpFile;
+        if (!path) return this.onError("存储路径不能为空");
+        if (type(url) == type.function) {
+            this.onStatusChange("正在获取下载地址");
+            this.progress.setProgressRange(0, 100);
+            this.progress.startProgress();
+            url = url(this, path, cfg, userAgent, proxy, proxyBypass, flag);
+            this.progress.stopProgress();
+            if (!url) return this.onError("获取下载地址失败");
+            if (!this.continueModal) return false;
+        }
+        var remoteFile = inet.httpFile(url, path, cfg, userAgent, proxy, proxyBypass, flags);
+        if (!remoteFile) return this.onError("存储路径错误");
+        remoteFile.bufferSize = this.bufferSize;
+        if (this.cookies) {
+            remoteFile.session.disableCookies();
+            remoteFile.session.addHeaders = {cookie = this.cookies};
+        }
+        var totalDownSize = 0;
+        var progressBlockSize;
+        remoteFile.onReceiveBegin = function(statusCode, contentLength, fileSize) {
+            if (contentLength) {
+                contentLength = contentLength + fileSize;
+                this.onReceiveBegin(contentLength, 1000);
+            } else {
+                this.onReceiveBegin(, 1000);
+                contentLength = 1000000;
+            }
+            if (statusCode == 206/*断点续传*/) totalDownSize = fileSize;
+            progressBlockSize = contentLength / 1000;
+        }
+        var time_tick = ..time.tick;
+        var tkPrev = 0;
+        var sizePs = 0;
+        remoteFile.onReceive = function(str, size, contentLength) { 
+            if (!this.continueModal) return false;
+            totalDownSize = totalDownSize + size;
+            sizePs = sizePs + size;
+            var tkCurrent = time_tick();
+            var ms = tkCurrent - tkPrev;
+            if (ms > 1000) {
+                this.onReceive(totalDownSize, totalDownSize / progressBlockSize, sizePs / (ms / 1000));
+                sizePs = 0;
+                tkPrev = tkCurrent;
+            }
+        }
+        var ret, err, fileSize = remoteFile.download(this.headers, this.referer);
+        this.statusCode = remoteFile.statusCode;
+        this.contentLength = remoteFile.contentLength;
+        this.modified = remoteFile.modified;
+        this.resumePath = remoteFile.resumePath;
+        if (ret) {
+            this.onStatusChange("文件大小：" + fsys.formatSize(fileSize));
+            this.onComplete("下载完成");
+            if (err) this.progress.hide = false;
+            else this.progress.progressPos = 1000;
+            this.complete = remoteFile.complete;
+            this.savePath = remoteFile.path;
+            if (this.endProc) this.endProc(ret, fileSize, err);
+            if (this.complete && this.closeTimeout) {
+                sleep(this.closeTimeout);
+                this.endModal(remoteFile.path);
+            }
+            this.dialogResult = remoteFile.path;
+        } else {
+            this.onError("下载失败：" + (this.statusCode ? this.statusCode : "Error"));
+        }
+        remoteFile.close();	
+    }
+}
+
+/**intellisense()
+zzskin.window = 简单初始化无边框窗口\n使用plus控件创建标题栏按钮,拖动边框,阴影等,\n标题栏上添加最小化、最大化、关闭窗口等按钮,\n并自动添加拖动边框、窗口阴影、设置窗口最大化范围等,\n禁用最大化按钮以后不添加用于拖动调整窗体大小的边框
+zzskin.window(.(窗体对象,按钮宽度,内容盒子) = 为参数@1指定的无边框窗口添加简单的标题栏,\n可选用参数@2,@3指定关闭等按钮宽度、是否启用内容盒子（用于内嵌IE等控件）
+zzskin.window() = !zzskin_window.
+!zzskin_window.titlebarMin = 最小化按钮,plus控件\n如果窗体设置了禁用最小化按钮则不创建此控件\n!ui_ctrl_plus.
+!zzskin_window.titlebarMax = 最大化按钮,plus控件\n如果窗体设置了禁用最大化按钮则不创建此控件,并且不添加拖动边框\n!ui_ctrl_plus.
+!zzskin_window.titlebarClose = 关闭按钮,plus控件\n!ui_ctrl_plus.
+!zzskin_window.titlebarIcon = 菜单按钮,plus控件\n!ui_ctrl_plus.
+!zzskin_window.titlebarText = 标题栏文本,plus控件\n!ui_ctrl_plus.
+!zzskin_window.titlebar = 标题栏,static控件\n!static.
+!zzskin_window._form = 标题栏所在窗口\n!winform.
+!zzskin_window.targetForm = 要控制的目标窗口\n!winform.
+end intellisense**/
