@@ -1,4 +1,4 @@
-## WechatVideoSniffer
+# WechatVideoSniffer
 
 微信视频号PC版视频地址嗅探器
 
@@ -12,7 +12,7 @@ Forked from [WechatVideoSniffer](https://github.com/xuncv/WechatVideoSniffer)
 
 1. 打开软件，点击`监听`按钮
 
-> 如果首次运行，会提示安装FiddlerCore根证书，请点击**`确定`**以信任此证书，证书的作用是建立中间人捕获https流量
+> 如果首次运行，会提示安装FiddlerCore根证书，请点击`确定`以信任此证书，证书的作用是建立中间人捕获https流量
 
 2. 在`PC微信`上打开视频
 
