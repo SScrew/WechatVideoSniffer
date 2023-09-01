@@ -303,10 +303,10 @@ class downBox {
     onComplete = function(info) {
         this.info.text = info;
     };
-    onStatusChange = function(text){
-        this.info.text = text;
+    onStatusChange = function(info) {
+        this.info.text = info;
     };
-    onReceiveBegin = function(contentLength, progresRange){
+    onReceiveBegin = function(contentLength, progresRange) {
         if (contentLength) this.total = ..fsys.formatSize(contentLength);
         else this.total = "unknown";
         // 初始化进度条
@@ -314,7 +314,7 @@ class downBox {
         this.progress.progressPos = 0;
         this.progress.hide = false;
     }
-    onReceive = function(totalDownSize, progressPos, sizePs){
+    onReceive = function(totalDownSize, progressPos, sizePs) {
         this.info.text = "下载大小：" + ..fsys.formatSize(totalDownSize) + "/" + this.total
                        + "　下载速度：" + ..math.size64(sizePs).format() + "/s";
         this.progress.progressPos = progressPos;
@@ -381,6 +381,7 @@ class downBox {
             if (this.endProc) this.endProc(ret, fileSize, err);
             if (this.complete && this.closeTimeout) {
                 sleep(this.closeTimeout);
+                this.removeResumeFile();
                 this.endModal(remoteFile.path);
             }
             this.dialogResult = remoteFile.path;

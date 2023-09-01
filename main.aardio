@@ -132,7 +132,7 @@ mainForm.btnDown.oncommand = function(id,event){
         }
         var zd = zzskin.downBox(mainForm, mainForm.text, 1000);
         if (!#desktop) desktop = win.reg("HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders").queryValue("desktop");
-        var filename = string.random(6) + ".mp4";
+        var filename = math.abs(string.crc32(url)) + ".mp4";
         mainForm.btnDown.text = "下载中"
         mainForm.btnDown.disabled = true
         zd.download(url, desktop + "/" + filename);
